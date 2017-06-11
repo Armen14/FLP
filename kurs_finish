@@ -1,0 +1,132 @@
+(define db (list '("name1" "age1" "address1" "1985")
+                   '("name2" "age2" "address2" "1990")
+                   '("name3" "age3" "address3" "1985")
+                   '("name4" "age4" "address4" "2000")))
+;---------------------------------------- Create main frame -------------------------------------------
+(define main_frame (new frame% [label "Data Base"]))
+;(define font (make-object font% 8 'default 'normal 'normal #f 'default #f))
+
+;----------------------------------------- Добавление в базу ------------------------------------------
+;центральные панель
+(define panel_center (new panel% [parent main_frame]))
+(define horizontal_panel_center (new horizontal-panel% [parent panel_center][min-width 250] [min-height 300]))
+
+;левая панель
+
+;правая панель
+(define panel_right (new vertical-panel% [parent horizontal_panel_center][min-width 250][horiz-margin 10][alignment '(right center)]))
+
+(new message% [parent panel_right] [label "\nДобавление в базу данных"])
+
+; Текстовые поля во фрейме
+(define panel_data (new horizontal-panel% [parent panel_right]))
+
+(define panel_data_text (new vertical-panel% [parent panel_data]))
+(new message% [parent panel_data_text] [label "Имя"])
+(new message% [parent panel_data_text] [label "Возраст"])
+(new message% [parent panel_data_text] [label "Адрес"])
+(new message% [parent panel_data_text] [label "Год"])
+
+(define panel_edit (new vertical-panel% [parent panel_data]))
+(define text_name (new text-field% [parent panel_edit] [label ""][min-width 200]))
+(define text_age (new text-field% [parent panel_edit] [label ""][min-width 200]))
+(define text_addres (new text-field% [parent panel_edit] [label ""][min-width 200]))
+(define text_year (new text-field% [parent panel_edit] [label ""] [min-width 200]))
+
+(define file (open-output-file "lisp.html"))
+(display "<html><body><table border='1'>" file)
+(define (lines lst)
+(if (null? lst) (display "")
+(begin
+(display "<td>" file)
+(display(car lst) file)
+(display "</td>" file)
+(lines (cdr lst)))))
+
+(define (table lst)
+(if (null? lst) (display "")
+(begin
+(display "<tr>" file)
+(lines (car lst))
+(display "</tr>" file)
+(table (cdr lst))))) 
+
+(define (add-line lst line)
+  (if (null? (cdr lst))
+      (list (car lst) line)
+      (cons (car lst) (add-line (cdr lst) line))))
+
+;(display "</table></body></html>" file)
+(define panel_buttons (new horizontal-panel% [parent panel_right] [alignment '(right top)]))
+(new button% [parent panel_buttons] [label "Добавить"][min-width 95] [min-height 10]
+     (callback
+      (lambda(button event)
+        (begin
+         (define line (list (send text_name get-value) (send text_age get-value) (send text_addres get-value) (send text_year get-value)))
+         (table (add-line db line))
+         (close-output-port file))
+        )))
+(new button% [parent panel_buttons] [label " Очистить"][min-width 95] [min-height 10]
+     (callback
+      (lambda(button event)(begin 
+        (send text_name set-value "")
+        (send text_age set-value "")
+        (send text_addres set-value "")
+        (send text_year set-value "")))))
+
+;-------------------------------------- Поиск ---------------------------------------------
+(define panel_search (new vertical-panel%[parent panel_right][alignment '(right center)][vert-margin 20]))
+(define search_edit(new text-field%[parent panel_search][label "Поиск"][min-width 200] [min-height 10]))
+
+(define (search_db lst m)
+  (cond ((null? lst) (display "error"))
+        ((= m 0) (car lst))
+        (#t (search_db (cdr lst) (- m 1)))))
+(define (select lst body new_db)
+  (if (null? lst) new_db
+      (if (equal? (body (car lst)) #t)
+          (select (cdr lst) body (append new_db (list (car lst))))
+          (select (cdr lst) body new_db))))
+
+(define panel_buttons2 (new horizontal-panel% [parent panel_search] [alignment '(right top)]))
+
+(new button% [parent panel_buttons2] [label "Найти"] [min-width 95] [min-height 10]
+     (callback
+      (lambda(button event)
+        (begin
+          (define val(send search_edit get-value))
+          (table (select db 
+                         (lambda (line) 
+                           (if (equal? (search_db line 0) val) #t 
+                               #f)) '()))
+          (close-output-port file)))))
+(new button% [parent panel_buttons2] [label " Очистить"][min-width 95] [min-height 10]
+     (callback
+      (lambda(button event)(begin 
+        (send search_edit set-value "")))))
+
+;-------------------------------------- Удаление ---------------------------------------------
+(define delete (new vertical-panel%[parent panel_right][alignment '(right center)][vert-margin 20]))
+(define del (new text-field% [parent delete] [label "Удаление"][min-width 200] [min-height 10]))
+(define panel_buttons3 (new horizontal-panel% [parent delete] [alignment '(right top)]))
+(define (delete lst body new-base)
+  (if (null? lst) new-base
+      (if (equal? (body (car lst)) #t)(begin 
+          (delete (cdr lst) body new-base))
+            (delete (cdr lst) body (append new-base (list (car lst))))
+          )))
+(new button% [parent panel_buttons3] [label "Удалить"] [min-width 95] [min-height 10]
+     (callback
+      (lambda(button event)
+        (begin 
+          (define val (send del get-value))
+          (table(delete db (lambda (line)(if (equal? (search_db line 0) val)#t #f)) '()))
+          (close-output-port file)
+          ))))
+(new button% [parent panel_buttons3] [label " Очистить"][min-width 95] [min-height 10]
+     (callback
+      (lambda(button event)(begin 
+        (send del set-value "")))))
+
+;-------------------------------------- Show frame ---------------------------------------------
+(send main_frame show #t)

@@ -1,0 +1,88 @@
+(require (lib "plot.ss" "plot"))
+;----Переменные
+(define m 10.0)
+(define g 9.8)
+(define k1 7000.0)
+(define k2 5000.0)
+(define r 0.7)
+(define rr 1.0)
+(define J 5.0)
+;---------------
+(define h 0.001)
+(define num 3)
+(define timer 0)
+(define end-iter (/ 1 h))
+;---------------
+(define start_x 0)
+(define start_fi 0.1)
+(define start_v 0.1)
+(define start_w 0)
+
+;----Вычисление значения функции
+(define (f i x fi v w)
+  (cond
+    ((= i 0) (/ (- (* m g) (* k2 (- x (* fi rr)))) m))
+    ;((= i 1) (/ (- (* k2 (- x (* fi rr))) (* k1 fi r)) J))
+    ((= i 1) (/ (+ (* -1 k1 fi r) (* k2 (- x (* fi rr)))) J))
+    ((= i 2) v)
+    ((= i 3) w)))
+
+;----Вычисление коэффициентов
+(define (koef start end step lst x fi v w)
+  (if (= start end) (append lst (list (f start x fi v w)))
+      (koef (+ step start) end step (append lst (list (f start x fi v w))) x fi v w)))
+
+;----Взятие N-го элемента в списке
+(define (get-n lst n)
+  (cond ((null? lst) (display "error"))
+        ((= n 0) (car lst))
+        (#t (get-n (cdr lst) (- n 1)))))
+
+;----Добавление вектора в список
+(define (add-vector lst vct)
+  (if (null? (cdr lst))
+      (list (car lst) vct)
+      (cons (car lst) (add-vector (cdr lst) vct))))
+
+;----Метод Рунге-Кутты
+(define (runge-kutt end x fi v w x-data fi-data)
+  (if (> end 0) (begin
+                        ;----Вычисление 1-х коэффициентов
+                        (let* ((koef1 (koef 0 num 1 '() x fi v w))
+                        ;----Вычисление 2-х коэффициентов
+                              (koef2 (koef 0 num 1 '()
+                                           (+ x (* (get-n koef1 2) (/ h 2))) 
+                                           (+ fi (* (get-n koef1 3) (/ h 2)))
+                                           (+ v (* (get-n koef1 0) (/ h 2)))
+                                           (+ w (* (get-n koef1 1) (/ h 2)))))
+                        ;----Вычисление 3-х коэффициентов
+                              (koef3 (koef 0 num 1 '() 
+                                           (+ x (* (get-n koef2 2) (/ h 2))) 
+                                           (+ fi (* (get-n koef2 3) (/ h 2)))
+                                           (+ v (* (get-n koef2 0) (/ h 2)))
+                                           (+ w (* (get-n koef2 1) (/ h 2)))))
+                              ;----Вычисление 4-х коэффициентов
+                              (koef4 (koef 0 num 1 '()
+                                           (+ x (* (get-n koef3 2) h)) 
+                                           (+ fi (* (get-n koef3 3) h))
+                                           (+ v (* (get-n koef3 0) h))
+                                           (+ w (* (get-n koef3 1) h))))
+                              ;----Добавлние точек X в список
+                              (x-data (add-vector x-data (vector end x)))
+                              ;----Добавлние точек Fi в список
+                              (fi-data (add-vector fi-data (vector end fi))))
+                        ;----Вызов функции с новыми x,fi,v,w
+                        (runge-kutt (- end 1)
+                             (+ x (* (/ h 6) (+ (get-n koef1 2) (* 2 (get-n koef2 2)) (* 2 (get-n koef3 2)) (get-n koef4 2))))
+                             (+ fi (* (/ h 6) (+ (get-n koef1 3) (* 2 (get-n koef2 3)) (* 2 (get-n koef3 3)) (get-n koef4 3))))
+                             (+ v (* (/ h 6) (+ (get-n koef1 0) (* 2 (get-n koef2 0)) (* 2 (get-n koef3 0)) (get-n koef4 0))))
+                             (+ w (* (/ h 6) (+ (get-n koef1 1) (* 2 (get-n koef2 1)) (* 2 (get-n koef3 1)) (get-n koef4 1))))
+                             x-data fi-data)))
+      ;----Вывод графика на экран
+      (plot (mix (points x-data (color 'red))
+                 (points fi-data (color 'green)))
+            (x-min 500) (y-max 0.2) (y-min -0.2) (title "runge-kutt") (x-label "Time") (y-label "X, Fi"))))
+
+(runge-kutt end-iter start_x start_fi start_v start_w '(#(3 0)) '(#(3 0.1)))
+(display "X - red\n")
+(display "Fi - green")

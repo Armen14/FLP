@@ -1,0 +1,58 @@
+;initialization arguments
+(define k1 20000)
+(define k2 10000)
+(define k3 40000)
+
+(define n1 0.7)
+(define n2 0.7)
+(define n3 0.7)
+
+;(define m 10)
+
+(define x 5)
+(define y 3)
+
+(define (pow  x) (* x x))
+
+;Search osi x&&y
+(define l1 (+ (pow (- n1 x)) (pow (- 0 y))));27.49
+(define l2 (+ (pow (+ x x)) (pow (- y y))));100 
+(define l3 (+ (pow (+ x x)) (pow (+ y y))));136
+
+
+(define cosphi1 (/ (- n1 x) l1));-0.15642051655147327
+(define sinphi2 (/ (- n3 y) l2));-0.023
+(define sinphi3 (/ (- n2 y) l3));-0.016911764705882352
+
+;longest first prushine
+(define deltaN1 (- l1 n1));26.79
+(define P11 (* k1 deltaN1));535800.0
+;longest second prushine
+(define deltaN2 (- l2 n2));99.3
+(define P12 (* k2 deltaN2));993000.0
+;longest threed prushine
+(define deltaN3 (- l3 n3));135.3
+(define P13 (* k3 deltaN3));5412000.0
+
+;Силы действующие на пружины
+(define P11x (* P11 cosphi1));-83810.11276827937;big value!!!
+(define P11y (* P11 sinphi2));-12323.4;big value!!!
+
+(define P12x (* P12 cosphi1));unsigned-155325.57293561296;VALUE P12 signed
+(define P12y (* P12 sinphi2));-22839.0
+
+(define P13x (* P13 cosphi1));unsigend -846547.8355765733 ;VALUE P13 signed
+(define P13y (* P13 sinphi3));unsigned -91526.47058823529 ;VALUE P13 signed
+
+
+(define  Moment_full_1 (+ P11x P12x P13x));-1085683.5212804656;(unsigned)
+(define Moment_full_2 (+ P11y P12y P13y));-126688.8705882353;(unsigned)
+
+
+;Method Newtona
+; {k1*deltaN1*cosphi1-k2*deltaN2*cosphi2-k3*deltaN3*cosphi3=0
+;{
+; {k1*deltaN1*sinphi2-k2*deltaN2*sinphi2-k3*deltaN3*sinphi3=0
+
+
+

@@ -1,0 +1,103 @@
+(require (planet schematics/random:1:0/random))
+
+;;;;;;;;;;;;;;;;;;;;;;;pow(x,y);;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (pow e x)(if (null? x) 0 (* e (* e (- x 1)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;Сигномдальная функция;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (F x) (- (/ 1(+ 1 (pow 2.71 x))) 0.5))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;гипперболический тангенс;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (TH  x)
+  (- (/ (- 1 (pow 2.71 x)) (+ 1 (pow 2.71 x))) 0.5))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define x1input (list '(0 0 1 0)
+                      '(0 1 1 0)
+                      '(1 1 1 0)
+                      '(0 1 1 0)
+                      '(0 1 1 0)
+                      '(0 1 1 0)
+                      '(0 1 1 0)
+                      '(0 1 1 0)
+                      '(0 1 1 0)
+                      '(0 1 1 0)))
+
+(define x2input (list '(1 1 1 1)
+                      '(0 0 1 1)
+                      '(0 0 1 1)
+                      '(0 0 1 1)
+                      '(1 1 1 1)
+                      '(1 1 0 0)
+                      '(1 1 0 0)
+                      '(1 1 0 0)
+                      '(1 1 0 0)
+                      '(1 1 1 1)))
+
+(define x3input (list '(1 1 1 1)
+                      '(0 0 1 1)
+                      '(0 0 1 1)
+                      '(0 0 1 1)
+                      '(1 1 1 1)
+                      '(0 0 1 1)
+                      '(0 0 1 1)
+                      '(0 0 1 1)
+                      '(0 0 1 1)
+                      '(1 1 1 1)))
+
+(define w1hidden (list '(0 0 0 0)
+                       '(0 0 0 1)
+                       '(0 0 1 0)
+                       '(0 0 1 1)
+                       '(0 1 0 0)
+                       '(0 1 0 1)
+                       '(0 1 1 0)
+                       '(0 1 1 1)
+                       '(1 0 0 0)
+                       '(1 0 0 1)))
+(define  Whidden  '(0 0 0 1))
+(define Whidden2 '(0 0 1 0))
+(define Whidden3 '(0 0 1 1))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (mull-list x2input w1hidden return)(cond ((or (null? x3input) (null? w1hidden)) return)
+        (else (mull-list (cdr x2input) (cdr w1hidden) (append return (list (* (car x2input) (car w1hidden))))))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (add-list ls1 value)(cond ((null? ls1) value)(else (add-list (cdr ls1) (+ value (car ls1))))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (sum func return)(cond ((null? func) return)(else (sum (cdr func) (+ return (car func))))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (A x w return)(cond ((or (null? x) (null? w)) return)
+     (else (A (cdr x) (cdr w) (append return (list  (* (F (sum (mull-list (car x) (car w) '()) 0)))))))))
+(define A1layer_ (A x2input w1hidden '()))
+
+;;;;;;;;;;;;;;;;;output value;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;(define OUTPUTS  (* (F (sum (mull-list A1layer_  Whidden '()) 0)))) 
+(define OUTPUTS  (* (F (sum (mull-list A1layer_  Whidden2 '()) 0)))) 
+;(define OUTPUTS  (* (F (sum (mull-list A1layer_  Whidden3 '()) 0)))) 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;алгоритм обучения нейроной сети;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;алгоритм обратного распространения;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;обратный проход;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (iter count)(cond ((= count 0) (display "end of line"))(else (begin
+                (let* ((Target (random 10))(teta 0.9)(delta (* (* OUTPUTS (- 1 OUTPUTS)) (- Target OUTPUTS)))
+                       (delta_W (* (* teta delta) OUTPUTS))(Wn+1 (add-list Whidden2 delta_W)))                  
+                  (display  Wn+1)(newline)(iter (- count 1)))))))
+(iter 100)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;create file;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;(define FILECREATE1 (open-output-file "NeuronNet.txt"))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (writel l)(if (null? l) (display "\n" FILECREATE1)(begin
+        (display (car l) FILECREATE1) (display "\t" FILECREATE1) (writel (cdr l)))))
+(define (writen t)(if (null? t) (display  FILECREATE1)(begin(display  FILECREATE1)
+        (writel (car t)) (writen (cdr t)))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;(writen x1input)
+;(writen x2input)
+;(writen x3input)
+
+;(close-output-port FILECREATE1)

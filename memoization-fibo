@@ -1,0 +1,29 @@
+(define (make-table) (list '*t*))
+
+(define (myassoc key records)
+  (cond ((null? records) #f)
+        ((equal? key (caar records)) (car records))
+        (else (myassoc key (cdr records)))))
+
+(define (lookup key table)
+  (let ((record (myassoc key (cdr table))))
+    (if record (cdr record) #f)))
+
+(define (insert! key value table)
+  (let ((record (myassoc key (cdr table))))
+    (if record (set-cdr! record value )
+        (set-cdr! table (cons (cons key value) (cdr table))))))
+
+(define (memoization f)
+  (let ((table (make-table)))
+    (lambda (x)
+      (let ((previously-computed-result (lookup x table)))
+        (or previously-computed-result (let ((result (f x)))
+                                         (insert! x result table) result))))))
+(define memoization-fibo 
+  (memoization (lambda (n)
+                 (cond ((= n 0) 0)
+                       ((= n 1) 1)
+                       (else (+ (memoization-fibo (- n 1))
+                             (memoization-fibo(- n  2))))))))
+                                
